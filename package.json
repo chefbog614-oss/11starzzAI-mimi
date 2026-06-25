@@ -1,0 +1,11 @@
+{
+  "name": "sovereign-ai-studio",
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "npx -y htmlhint index.html",
+    "format": "prettier --check index.html",
+    "format:fix": "prettier --write index.html",
+    "test": "grep -q 'sim-btn' index.html && grep -q 'aria-live=\"polite\"' index.html && grep -q 'loadSimulation' index.html",
+    "build": "echo 'No build step required for standalone HTML'"
+  }
+}
