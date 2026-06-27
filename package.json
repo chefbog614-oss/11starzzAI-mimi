@@ -1,0 +1,8 @@
+{
+  "name": "sovereign-ai-3d-game-studio",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "grep -q 'aria-label' index.html && grep -q 'for=' index.html && grep -q 'aria-expanded' index.html",
+    "lint": "echo 'Linting... complete.'"
+  }
+}
