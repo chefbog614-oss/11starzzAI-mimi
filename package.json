@@ -1,0 +1,10 @@
+{
+  "name": "sovereign-ai-studio",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "grep -q 'role=\"region\"' index.html && grep -q 'aria-expanded=\"false\"' index.html && grep -q 'aria-controls=\"drawer-top\"' index.html && grep -q 'aria-live=\"polite\"' index.html && grep -q 'aria-label=\"Command Copilot Agent\"' index.html && grep -q 'id=\"system-mascot\" aria-label=\"Trigger AI Swarm compilation\"' index.html",
+    "lint": "echo 'No linting required for standalone HTML'",
+    "format": "echo 'No formatting required for standalone HTML'",
+    "build": "echo 'No build step required for standalone HTML'"
+  }
+}
