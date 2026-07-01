@@ -1,0 +1,10 @@
+{
+  "name": "sovereign-ai-studio",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "grep -q 'role=\"region\"' index.html && grep -q 'aria-expanded' index.html && grep -q 'aria-controls' index.html && grep -q 'aria-label' index.html && grep -q '\\[T\\]' index.html && grep -q '\\[L\\]' index.html && grep -q '\\[R\\]' index.html && grep -q '\\[B\\]' index.html && grep -q 'Press / to focus' index.html",
+    "lint": "echo 'No linting required for standalone HTML.'",
+    "format": "echo 'No formatting required for standalone HTML.'",
+    "build": "echo 'No build step required for standalone HTML.'"
+  }
+}
