@@ -1,0 +1,14 @@
+{
+  "name": "sovereign-ai-studio",
+  "version": "1.0.0",
+  "description": "Sovereign AI 3D Game Studio",
+  "scripts": {
+    "test": "grep -q 'aria-expanded' index.html && grep -q 'aria-controls' index.html && grep -q 'role=\"region\"' index.html && grep -q 'keydown' index.html",
+    "lint": "echo 'No linting required for single-file project'",
+    "format": "echo 'No formatting required for single-file project'",
+    "build": "echo 'No build required for single-file project'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
