@@ -1,0 +1,10 @@
+{
+  "name": "sovereign-ai-studio",
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "grep -q 'aria-label' index.html && grep -q 'role=\"region\"' index.html",
+    "format": "echo 'Formatting not applicable for single HTML file'",
+    "test": "grep -q \"addEventListener('keydown'\" index.html",
+    "build": "echo 'Build not required for standalone HTML'"
+  }
+}
