@@ -1,0 +1,11 @@
+{
+  "name": "sovereign-ai-studio",
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "npx -y htmlhint index.html",
+    "format": "prettier --check index.html",
+    "format:fix": "prettier --write index.html",
+    "test": "grep -q 'btn-copy-logs' index.html && grep -q 'btn-clear-logs' index.html && grep -q 'copyShellLogs' index.html && grep -q 'clearShellLogs' index.html",
+    "build": "echo 'No build step required for standalone HTML'"
+  }
+}
