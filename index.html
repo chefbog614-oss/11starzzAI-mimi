@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign AI 3D Game Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: #020412;
+            overflow: hidden;
+        }
+       .orbitron { font-family: 'Orbitron', sans-serif; }
+
+        /* CRT Scanline Filter Overlay */
+       .scanlines {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%);
+            background-size: 100% 4px;
+            opacity: 0.4;
+        }
+
+        /* Hardware-Accelerated Drawer Transitions */
+       .drawer {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(4, 6, 18, 0.95);
+            backdrop-filter: blur(12px);
+            border-color: rgba(0, 240, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+        }
+
+        /* Cute Lilac Mascot Orb [Image 1, Image 2, Image 8] */
+       .mascot-orb {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #8b92ff 0%, #3a1ebd 100%);
+            box-shadow: 0 0 25px rgba(139, 146, 255, 0.6);
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+       .mascot-orb::before,.mascot-orb::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 18px solid #8b92ff;
+        }
+       .mascot-orb::before { left: 5px; transform: rotate(-15deg); }
+       .mascot-orb::after { right: 5px; transform: rotate(15deg); }
+
+       .mascot-orb.pulsing {
+            animation: compile-pulse 1s infinite alternate;
+        }
+
+        @keyframes compile-pulse {
+            0% { transform: scale(1) rotate(0deg); box-shadow: 0 0 20px rgba(0, 240, 255, 0.7); }
+            100% { transform: scale(1.15) rotate(10deg); box-shadow: 0 0 45px rgba(189, 0, 255, 0.9); }
+        }
+
+        /* Scrollbar styles for dark-theme drawers */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 240, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        /* Neon-themed Focus Indicator [Focus Ring Design] */
+        *:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px #020412, 0 0 0 4px rgba(0, 240, 255, 0.8), 0 0 10px rgba(0, 240, 255, 0.6);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen text-slate-300 select-none">
+
+    <div class="scanlines"></div>
+
+    <div id="canvas-container" class="absolute inset-0 w-full h-full z-0"></div>
+
+    <div class="absolute inset-0 w-full h-full pointer-events-none z-10">
+
+        <div id="drawer-top" role="region" aria-label="Cognitive Settings" class="drawer fixed top-0 left-[10%] w-[80%] h-64 border-b pointer-events-auto z-20 -translate-y-[256px] flex flex-col p-5">
+            <div class="flex justify-between items-center mb-3">
+                <span class="orbitron tracking-widest text-cyan-400 font-bold text-xs">Fable 5.1 Cognitive Settings</span>
+                <span class="text-[10px] text-slate-500">Autonomous Execution Engine Mode: Active</span>
+            </div>
+            <div class="grid grid-cols-3 gap-6 text-xs mt-2">
+                <div class="space-y-3">
+                    <div>
+                        <label for="engine-select" class="text-[10px] text-slate-400 block mb-1">CORE PROCESSING AGENT</label>
+                        <select id="engine-select" class="w-full bg-slate-950 border border-cyan-500/20 text-cyan-300 p-2 rounded focus:outline-none focus:border-cyan-400">
+                            <option value="fable">Fable 5.1 Game Dev (Mythos 5 Core)</option>
+                            <option value="kimi">Kimi K2.7-Coder Swarm</option>
+                            <option value="sovereign">Sovereign Fallback</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="thinking-select" class="text-[10px] text-slate-400 block mb-1">ADAPTIVE THINKING DEPTH</label>
+                        <select id="thinking-select" class="w-full bg-slate-950 border border-cyan-500/20 text-cyan-300 p-2 rounded focus:outline-none">
+                            <option value="high">High (Default Level)</option>
+                            <option value="max">Maximum (Speculative Routing)</option>
+                            <option value="inline">Standard Inline</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label for="preset-select" class="text-[10px] text-slate-400 block mb-1">PLAYGROUND PRESET</label>
+                        <select id="preset-select" class="w-full bg-slate-950 border border-cyan-500/20 text-cyan-300 p-2 rounded focus:outline-none">
+                            <option value="standard">Standard Cyber (Cyan Neon)</option>
+                            <option value="purple">Purple Cosmic (Cosmic Shimmer)</option>
+                            <option value="deforming">Deforming Cyber (Gravitational Wave)</option>
+                            <option value="matrix">Matrix Digital (ASCII Code Rain)</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="physics-mass" class="text-[9px] text-slate-400 block mb-0.5">MASS (KG)</label>
+                            <input type="number" id="physics-mass" value="1.0" class="w-full bg-slate-950 border border-cyan-500/20 text-cyan-300 px-2 py-1.5 rounded focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="physics-friction" class="text-[9px] text-slate-400 block mb-0.5">FRICTION</label>
+                            <input type="number" id="physics-friction" value="0.5" class="w-full bg-slate-950 border border-cyan-500/20 text-cyan-300 px-2 py-1.5 rounded focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <span class="text-[10px] text-slate-400 block">AABB SIZING TOOL BOUNDS</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label for="aabb-x" class="text-[9px] text-slate-500 block">X-WIDTH</label>
+                            <input type="text" id="aabb-x" value="3.14m" class="w-full bg-slate-950 border border-cyan-500/20 text-cyan-300 text-center py-1 rounded">
+                        </div>
+                        <div>
+                            <label for="aabb-y" class="text-[9px] text-slate-500 block">Y-HEIGHT</label>
+                            <input type="text" id="aabb-y" value="3.14m" class="w-full bg-slate-950 border border-cyan-500/20 text-cyan-300 text-center py-1 rounded">
+                        </div>
+                        <div>
+                            <label for="aabb-z" class="text-[9px] text-slate-500 block">Z-DEPTH</label>
+                            <input type="text" id="aabb-z" value="3.14m" class="w-full bg-slate-950 border border-cyan-500/20 text-cyan-300 text-center py-1 rounded">
+                        </div>
+                    </div>
+                    <div class="pt-1">
+                        <label for="physics-restitution" class="text-[9px] text-slate-400 block mb-0.5">RESTITUTION (BOUNCINESS)</label>
+                        <input type="range" id="physics-restitution" min="0" max="1" step="0.05" value="0.2" class="w-full accent-cyan-500">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button id="toggle-top" aria-expanded="false" aria-controls="drawer-top" onclick="toggleSide('top')" class="fixed top-0 left-1/2 -translate-x-1/2 bg-slate-950 border-b border-x border-cyan-500/30 pointer-events-auto z-30 px-5 py-1 rounded-b text-[10px] orbitron font-bold text-cyan-400 tracking-wider"><span class="text-cyan-600 mr-1">[T]</span> COGNITIVE CONFIG</button>
+
+        <div id="drawer-left" role="region" aria-label="Asset Briefcase" class="drawer fixed top-0 left-0 h-full w-80 border-r pointer-events-auto z-20 -translate-x-[320px] flex flex-col p-5">
+            <h2 class="orbitron tracking-widest text-cyan-400 font-bold text-xs mb-4 border-b border-cyan-500/20 pb-2">Executive Asset Briefcase</h2>
+
+            <div class="mb-4">
+                <span class="text-[10px] text-slate-500 block mb-2 uppercase font-bold tracking-widest">MODELING STYLUS</span>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2 border border-cyan-500/10 rounded">
+                        <span>🌐 Meshy 6 Engine</span>
+                        <span class="bg-green-500/20 text-green-400 text-[9px] px-1.5 py-0.5 rounded font-bold">READY</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2 border border-cyan-500/10 rounded">
+                        <span>👤 Rodin Character Unit</span>
+                        <span class="bg-green-500/20 text-green-400 text-[9px] px-1.5 py-0.5 rounded font-bold">READY</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2 border border-cyan-500/10 rounded">
+                        <span>💎 Hitem3D Modeler</span>
+                        <span class="bg-cyan-500/20 text-cyan-400 text-[9px] px-1.5 py-0.5 rounded font-bold">ONLINE</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2 border border-cyan-500/10 rounded">
+                        <span>🧱 Sloyd Hard Surface</span>
+                        <span class="bg-cyan-500/20 text-cyan-400 text-[9px] px-1.5 py-0.5 rounded font-bold">ONLINE</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-grow flex flex-col">
+                <span class="text-[10px] text-slate-500 block mb-2 uppercase font-bold tracking-widest">ACTIVE SIMULATIONS</span>
+                <div class="flex-grow bg-slate-950/80 border border-cyan-500/10 rounded p-3 text-xs overflow-y-auto space-y-2.5">
+                    <div class="p-2 border border-blue-500/10 rounded hover:border-cyan-500/20 cursor-pointer transition">
+                        <div class="font-bold text-cyan-300">Meteor Blaster Arcade</div>
+                        <div class="text-[10px] text-slate-400">WebGL Vector-Neon Game Engine</div>
+                    </div>
+                    <div class="p-2 border border-blue-500/10 rounded hover:border-cyan-500/20 cursor-pointer transition">
+                        <div class="font-bold text-cyan-300">1989 DOS Game Decompiler</div>
+                        <div class="text-[10px] text-slate-400">Lossless assembly reconstruction matrix</div>
+                    </div>
+                    <div class="p-2 border border-blue-500/10 rounded hover:border-cyan-500/20 cursor-pointer transition">
+                        <div class="font-bold text-cyan-300">Taj Mahal 3D Showcase</div>
+                        <div class="text-[10px] text-slate-400">Path-traced volumetric deconstruction</div>
+                    </div>
+                    <div class="p-2 border border-blue-500/10 rounded hover:border-cyan-500/20 cursor-pointer transition">
+                        <div class="font-bold text-cyan-300">Water Fluid Solver</div>
+                        <div class="text-[10px] text-slate-400">WebGL2 Navier-Stokes physics model</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button id="toggle-left" aria-expanded="false" aria-controls="drawer-left" onclick="toggleSide('left')" class="fixed left-0 top-1/2 -translate-y-1/2 bg-slate-950 border-r border-y border-cyan-500/30 pointer-events-auto z-30 px-1.5 py-5 rounded-r text-[10px] orbitron font-bold text-cyan-400 tracking-wider [writing-mode:vertical-lr]"><span class="text-cyan-600 mb-1">[L]</span> ASSET BRIEFCASE</button>
+
+        <div id="drawer-right" role="region" aria-label="FX Tuning Console" class="drawer fixed top-0 right-0 h-full w-80 border-l pointer-events-auto z-20 translate-x-[320px] flex flex-col p-5">
+            <h2 class="orbitron tracking-widest text-cyan-400 font-bold text-xs mb-4 border-b border-cyan-500/20 pb-2">FX & Asset Tuning Console</h2>
+            <div class="flex-grow space-y-4 overflow-y-auto pr-1">
+                <div class="slider-group">
+                    <label for="param-complexity">GEOMETRY SIMPLIFICATION (SIMPLYGON)</label>
+                    <input type="range" id="param-complexity" min="4" max="100" value="45" class="w-full">
+                    <span class="slider-value"><span id="lbl-complexity" class="text-cyan-400 font-bold">45</span> subdivisions</span>
+                </div>
+                <div class="slider-group">
+                    <label for="param-hue">ALBEDO EMISSIVE COLOR HUE</label>
+                    <input type="range" id="param-hue" min="0" max="360" value="180" class="w-full">
+                    <span class="slider-value"><span id="lbl-hue" class="text-cyan-400 font-bold">180</span>° Hue Range</span>
+                </div>
+                <div class="slider-group">
+                    <label for="param-light">LUMEN LITE INTENSITY</label>
+                    <input type="range" id="param-light" min="1" max="50" value="15" class="w-full">
+                    <span class="slider-value"><span id="lbl-light" class="text-cyan-400 font-bold">15</span> lm Specular</span>
+                </div>
+                <div class="slider-group">
+                    <label for="param-shadow">SHADOW SHARPNESS / BLUR</label>
+                    <input type="range" id="param-shadow" min="0" max="10" step="1" value="5" class="w-full">
+                    <span class="slider-value">Gaussian radius <span id="lbl-shadow" class="text-cyan-400 font-bold">5px</span></span>
+                </div>
+                <div class="slider-group">
+                    <label for="param-bloom">CAMERA POST-PROCESS BLOOM LIMIT</label>
+                    <input type="range" id="param-bloom" min="1" max="15" value="8" class="w-full">
+                    <span class="slider-value">Threshold <span id="lbl-bloom" class="text-cyan-400 font-bold">8</span> index</span>
+                </div>
+                <div class="slider-group">
+                    <label for="param-sharpness">VIEWPORT SHARPNESS</label>
+                    <input type="range" id="param-sharpness" min="1" max="10" value="7" class="w-full">
+                    <span class="slider-value">Filter ratio <span id="lbl-sharpness" class="text-cyan-400 font-bold">7x</span></span>
+                </div>
+            </div>
+        </div>
+        <button id="toggle-right" aria-expanded="false" aria-controls="drawer-right" onclick="toggleSide('right')" class="fixed right-0 top-1/2 -translate-y-1/2 bg-slate-950 border-l border-y border-cyan-500/30 pointer-events-auto z-30 px-1.5 py-5 rounded-l text-[10px] orbitron font-bold text-cyan-400 tracking-wider [writing-mode:vertical-lr]"><span class="text-cyan-600 mb-1">[R]</span> FX TUNING</button>
+
+        <div id="drawer-bottom" role="region" aria-label="Diagnostic Shell" class="drawer fixed bottom-0 left-[5%] w-[90%] h-64 border-t pointer-events-auto z-20 translate-y-[256px] flex flex-col p-5">
+            <div class="flex justify-between items-center text-xs text-cyan-400 border-b border-cyan-500/20 pb-2 mb-2">
+                <span class="orbitron tracking-widest uppercase">Active: SPATIAL | Mode: TRANSLATOR | System: OFFLINE SANDBOX</span>
+                <span class="font-mono text-[10px]">Telemetry WebSocket Status: Synchronized</span>
+            </div>
+            <div id="shell-logs" aria-live="polite" class="flex-grow overflow-y-auto text-[11px] font-mono text-cyan-300/80 space-y-1.5 mb-2 pr-2">
+                <div> Multimodal Sandbox Environment initialized. Offline fallback protocols activated.</div>
+                <div>[PLANNING] Decomposing game structure brief: Reconstruct local rendering vectors.</div>
+                <div> 3D canvas viewport active at locked 60 FPS refresh parameters.</div>
+            </div>
+            <div class="flex items-center space-x-2 border-t border-cyan-950/50 pt-2 font-mono text-xs">
+                <span class="text-cyan-400 font-bold">studio:~$</span>
+                <input id="shell-input" type="text" aria-label="Command Copilot Agent" placeholder="Command Copilot Agent... (Press / to focus)" class="bg-transparent border-none focus:outline-none text-cyan-300 flex-grow">
+            </div>
+        </div>
+        <button id="toggle-bottom" aria-expanded="false" aria-controls="drawer-bottom" onclick="toggleSide('bottom')" class="fixed bottom-0 left-1/2 -translate-x-1/2 bg-slate-950 border-t border-x border-cyan-500/30 pointer-events-auto z-30 px-5 py-1 rounded-t text-[10px] orbitron font-bold text-cyan-400 tracking-wider"><span class="text-cyan-600 mr-1">[B]</span> DIAGNOSTIC SHELL</button>
+
+    </div>
+
+    <div class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none z-5">
+        <h1 class="orbitron tracking-widest text-white uppercase text-center font-bold text-2xl drop-shadow-[0_0_15px_rgba(0,240,255,0.5)]">Sovereign AI Studio</h1>
+        <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Autonomous Multi-Agent Simulation Engine</p>
+
+        <button id="system-mascot" aria-label="Trigger AI Swarm compilation" class="mascot-orb mt-6 pointer-events-auto cursor-pointer"></button>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.181.2/build/three.module.js';
+
+        // State trackers for collapsible perimeter drawers
+        const drawerControllers = {
+            top: { id: 'drawer-top', open: false, slideTransform: 'translateY(0px)' },
+            left: { id: 'drawer-left', open: false, slideTransform: 'translateX(0px)' },
+            right: { id: 'drawer-right', open: false, slideTransform: 'translateX(0px)' },
+            bottom: { id: 'drawer-bottom', open: false, slideTransform: 'translateY(0px)' }
+        };
+
+        window.toggleSide = function(side) {
+            const drawer = drawerControllers[side];
+            drawer.open = !drawer.open;
+            const element = document.getElementById(drawer.id);
+            element.style.transform = drawer.open ? drawer.slideTransform : '';
+
+            // Update ARIA state
+            const toggleBtn = document.getElementById(`toggle-${side}`);
+            if (toggleBtn) {
+                toggleBtn.setAttribute('aria-expanded', drawer.open);
+            }
+        };
+
+        // Global Keyboard Shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                ['top', 'left', 'right', 'bottom'].forEach(side => {
+                    if (drawerControllers[side].open) toggleSide(side);
+                });
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+                return;
+            }
+
+            // Ignore single-key shortcuts if user is typing in an input, textarea or select
+            const activeTag = e.target.tagName;
+            if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+            if (key === 't') toggleSide('top');
+            if (key === 'l') toggleSide('left');
+            if (key === 'r') toggleSide('right');
+            if (key === 'b') toggleSide('bottom');
+            if (key === '/') {
+                e.preventDefault();
+                // If bottom drawer is closed, open it first
+                if (!drawerControllers.bottom.open) toggleSide('bottom');
+                document.getElementById('shell-input').focus();
+            }
+        });
+
+        // WebGL variables
+        let scene, camera, renderer, playgroundMesh, gridFloor, gridLights;
+        let activeBackdrop = 'standard';
+        let mouseX = 0, mouseZ = 0;
+        const collisionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const engineRaycaster = new THREE.Raycaster();
+        const cursorPosition = new THREE.Vector2();
+
+        // Standard timeline tracking variables
+        window.__timelines = {
+            currentTime: 0,
+            running: true
+        };
+
+        function initWebGLSandbox() {
+            const targetContainer = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x020412, 0.04);
+
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
+            camera.position.set(0, 9, 14);
+            camera.lookAt(0, 1.5, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            targetContainer.appendChild(renderer.domElement);
+
+            // Establish Neon reflection grid
+            gridFloor = new THREE.GridHelper(90, 90, 0x00f0ff, 0x011333);
+            scene.add(gridFloor);
+
+            // Establish 3D Geometry
+            const torusGeometry = new THREE.TorusKnotGeometry(2.3, 0.5, 45, 8);
+            const emissiveMaterial = new THREE.MeshStandardMaterial({
+                color: 0x00f0ff,
+                emissive: 0x0051ff,
+                emissiveIntensity: 2.0,
+                wireframe: true,
+                roughness: 0.1,
+                metalness: 0.95
+            });
+
+            playgroundMesh = new THREE.Mesh(torusGeometry, emissiveMaterial);
+            playgroundMesh.position.set(0, 2.8, 0);
+            scene.add(playgroundMesh);
+
+            // Ambient fills and directional lights
+            gridLights = new THREE.PointLight(0x00f0ff, 15, 30);
+            gridLights.position.set(0, 4, 0);
+            scene.add(gridLights);
+
+            const ambientLight = new THREE.AmbientLight(0x020424, 0.9);
+            scene.add(ambientLight);
+
+            window.addEventListener('mousemove', handleCursorMovement);
+            window.addEventListener('resize', handleViewportResize);
+
+            renderFrameLoop();
+        }
+
+        function handleCursorMovement(e) {
+            cursorPosition.x = (e.clientX / window.innerWidth) * 2 - 1;
+            cursorPosition.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            engineRaycaster.setFromCamera(cursorPosition, camera);
+            const intersectionPoint = new THREE.Vector3();
+            if (engineRaycaster.ray.intersectPlane(collisionPlane, intersectionPoint)) {
+                mouseX = intersectionPoint.x;
+                mouseZ = intersectionPoint.z;
+            }
+        }
+
+        function handleViewportResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function renderFrameLoop() {
+            requestAnimationFrame(renderFrameLoop);
+
+            if (window.__timelines.running) {
+                window.__timelines.currentTime += 0.012;
+            }
+
+            const tick = window.__timelines.currentTime;
+
+            // Handle rotational matrices
+            playgroundMesh.rotation.x = tick * 0.35;
+            playgroundMesh.rotation.y = tick * 0.5;
+
+            // Handle dynamic deforming math for waves
+            if (activeBackdrop === 'deforming') {
+                const positionAttribute = gridFloor.geometry.attributes.position;
+                for (let i = 0; i < positionAttribute.count; i++) {
+                    const vx = positionAttribute.getX(i);
+                    const vy = positionAttribute.getY(i);
+                    // Deform vertices under simulated gravity ripples
+                    const dynamicZ = Math.sin(vx * 0.25 + tick) * Math.cos(vy * 0.25 + tick) * 0.6;
+                    positionAttribute.setZ(i, dynamicZ);
+                }
+                gridFloor.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Spotlight moves fluidly towards coordinates
+            gridLights.position.x += (mouseX - gridLights.position.x) * 0.08;
+            gridLights.position.z += (mouseZ - gridLights.position.z) * 0.08;
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize WebGL Content Area
+        initWebGLSandbox();
+
+        // --- BINDING SLIDERS AND DOM METRICS ---
+        document.getElementById('param-complexity').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            document.getElementById('lbl-complexity').innerText = val;
+            playgroundMesh.geometry.dispose();
+            playgroundMesh.geometry = new THREE.TorusKnotGeometry(2.3, 0.5, val, 8);
+        });
+
+        document.getElementById('param-hue').addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.getElementById('lbl-hue').innerText = val;
+            const albedo = new THREE.Color(`hsl(${val}, 100%, 50%)`);
+            playgroundMesh.material.color.copy(albedo);
+            gridLights.color.copy(albedo);
+        });
+
+        document.getElementById('param-light').addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.getElementById('lbl-light').innerText = val;
+            gridLights.intensity = parseFloat(val);
+        });
+
+        document.getElementById('param-shadow').addEventListener('input', (e) => {
+            document.getElementById('lbl-shadow').innerText = e.target.value + 'px';
+        });
+
+        document.getElementById('param-bloom').addEventListener('input', (e) => {
+            document.getElementById('lbl-bloom').innerText = e.target.value;
+            playgroundMesh.material.emissiveIntensity = parseFloat(e.target.value) / 4;
+        });
+
+        document.getElementById('param-sharpness').addEventListener('input', (e) => {
+            document.getElementById('lbl-sharpness').innerText = e.target.value + 'x';
+        });
+
+        // Backdrop preset shader transformations
+        document.getElementById('preset-select').addEventListener('change', (e) => {
+            activeBackdrop = e.target.value;
+            const floorColor = activeBackdrop === 'purple'? 0xbd00ff : activeBackdrop === 'matrix'? 0x39ff14 : 0x00f0ff;
+            gridFloor.material.color.setHex(floorColor);
+        });
+
+        // --- MULTI-AGENT SWARM SIMULATOR & CLI ENGINE ---
+        const logsBox = document.getElementById('shell-logs');
+        const inputField = document.getElementById('shell-input');
+        const mascot = document.getElementById('system-mascot');
+
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = e.target.value.trim();
+                if (!cmd) return;
+
+                commandHistory.push(cmd);
+                historyIndex = commandHistory.length;
+
+                appendLogLine(`studio:~$ ${cmd}`, 'text-slate-500');
+                processDiagnosticShellCommand(cmd);
+                e.target.value = '';
+            } else if (e.key === 'ArrowUp') {
+                if (commandHistory.length > 0 && historyIndex > 0) {
+                    e.preventDefault();
+                    historyIndex--;
+                    inputField.value = commandHistory[historyIndex];
+                    setTimeout(() => inputField.setSelectionRange(inputField.value.length, inputField.value.length), 0);
+                }
+            } else if (e.key === 'ArrowDown') {
+                if (historyIndex < commandHistory.length - 1) {
+                    e.preventDefault();
+                    historyIndex++;
+                    inputField.value = commandHistory[historyIndex];
+                    setTimeout(() => inputField.setSelectionRange(inputField.value.length, inputField.value.length), 0);
+                } else if (historyIndex === commandHistory.length - 1) {
+                    e.preventDefault();
+                    historyIndex = commandHistory.length;
+                    inputField.value = '';
+                }
+            }
+        });
+
+        mascot.addEventListener('click', () => {
+            if (mascot.classList.contains('pulsing')) return;
+            mascot.classList.add('pulsing');
+            mascot.setAttribute('aria-busy', 'true');
+            appendLogLine('[COMPILE] Multi-Agent Swarm launched. Initializing continuous compilation run...', 'text-purple-400 font-bold');
+
+            // Phase 1: Planning
+            setTimeout(() => {
+                appendLogLine('[PLANNING] Orchestrator Swarm decomposing target mechanics into code instructions.', 'text-cyan-400');
+            }, 1000);
+
+            // Phase 2: Concurrent code synthesis
+            setTimeout(() => {
+                appendLogLine(' Coder Swarm generating shader coordinates and bounding maps.', 'text-cyan-400');
+            }, 2500);
+
+            // Phase 3: Compilation and testing
+            setTimeout(() => {
+                appendLogLine(' Visual QA Swarm (MoonViT Vision) comparing viewport screenshots against spec indices.', 'text-cyan-400');
+            }, 4000);
+
+            // Phase 4: Commit
+            setTimeout(() => {
+                appendLogLine(' Build fully aligned. Cryptographic evidence appended to index_ledger.', 'text-green-400 font-bold');
+                mascot.classList.remove('pulsing');
+                mascot.setAttribute('aria-busy', 'false');
+            }, 5500);
+        });
+
+        function appendLogLine(msg, cssStyle = 'text-cyan-300') {
+            const div = document.createElement('div');
+            div.className = cssStyle;
+            div.innerText = msg;
+            logsBox.appendChild(div);
+            logsBox.scrollTop = logsBox.scrollHeight;
+        }
+
+        function processDiagnosticShellCommand(input) {
+            const raw = input.toLowerCase();
+            if (raw === 'help') {
+                appendLogLine('Operational Tools: status, run-audit, clear', 'text-cyan-400');
+            } else if (raw === 'status') {
+                appendLogLine(' 300 domain-specialized sub-agents online across parallel pipelines.', 'text-green-400');
+            } else if (raw === 'run-audit') {
+                appendLogLine('[INFO] Testing visual and logical compilation loops...');
+                setTimeout(() => {
+                    appendLogLine('✓ Sandbox metrics validated. Threading bounds aligned.', 'text-green-400');
+                }, 400);
+            } else if (raw === 'clear') {
+                logsBox.innerHTML = '';
+            } else {
+                appendLogLine(` Action phrase "${input}" unmapped in diagnostic system index.`, 'text-pink-500');
+            }
+        }
+    </script>
+</body>
+</html>
