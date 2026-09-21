@@ -1,0 +1,3 @@
+## 2025-05-20 - Command History & Spring Micro-Interactions in Sovereign AI Studio
+**Learning:** Adding CLI-style command history buffer (ArrowUp/ArrowDown) for embedded diagnostic shells significantly reduces repetitive typing for power users. Furthermore, subtle organic spring transitions (`cubic-bezier(0.175, 0.885, 0.32, 1.275)`) on interactive mascot components give visual feedback that feels alive without distracting from main canvas viewports.
+**Action:** Always provide command history buffers in interactive terminal components, update `aria-busy` state dynamically during async operations, and support `Escape` as a universal panel dismiss key.
